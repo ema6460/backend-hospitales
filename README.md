@@ -17,7 +17,7 @@ ExpressJS
 MongoDb
 Typescript
 AngularCLI
-PostMan
+
 ```
 
 ### Instalación 🔧
