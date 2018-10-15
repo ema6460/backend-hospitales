@@ -1,6 +1,8 @@
 //Importaciones
 var express = require('express');
 var bcrypt = require('bcryptjs');
+var jwt = require('jsonwebtoken');
+var mdAutenticacion = require('../middelwares/autenticacion');
 var app = express();
 
 
@@ -34,10 +36,14 @@ app.get('/', (req, res, next) => {
 });
 
 
+
+
+
+
 // ======================================
 // Actualizar usuario
 // ======================================
-app.put('/:id', (req, res) => {
+app.put('/:id', mdAutenticacion.verificaToken, (req, res) => {
 
     var id = req.params.id;
     var body = req.body;
@@ -94,7 +100,7 @@ app.put('/:id', (req, res) => {
 // ======================================
 // Crear usuario
 // ======================================
-app.post('/', (req, res) => {
+app.post('/', mdAutenticacion.verificaToken, (req, res) => {
 
     var body = req.body;
 
@@ -118,7 +124,8 @@ app.post('/', (req, res) => {
         }
         res.status(201).json({
             ok: true,
-            usuario: usuarioGuardado
+            usuario: usuarioGuardado,
+            usuaritoken: req.usuario
         });
     });
 });
@@ -128,7 +135,7 @@ app.post('/', (req, res) => {
 // ======================================
 // Eliminar un usuario por el id
 // ======================================
-app.delete('/:id', (req, res) => {
+app.delete('/:id', mdAutenticacion.verificaToken, (req, res) => {
 
     var id = req.params.id;
 
