@@ -7,6 +7,7 @@ var bodyParser = require('body-parser');
 // IMPORTA RUTAS
 var appRoutes = require('./routes/app');
 var usuarioRoutes = require('./routes/usuario');
+var hospitalRoutes = require('./routes/hospital');
 var loginRoutes = require('./routes/login');
 
 
@@ -39,6 +40,7 @@ mongoose.connection.openUri('mongodb://localhost:27017/hospitalDB', {
 //  Declaro un middleware que es algo que se ejecuta antes que se resuelvan otras rutas, cuando cualquier peticion haga match con / quiero que use appRoutes
 app.use('/login', loginRoutes);
 app.use('/usuario', usuarioRoutes);
+app.use('/hospital', hospitalRoutes);
 app.use('/', appRoutes);
 
 
