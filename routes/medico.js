@@ -18,7 +18,18 @@ var Medico = require('../models/medico');
 // ======================================
 app.get('/', (req, res, next) => {
 
+    var desde = req.query.desde || 0;
+    desde = Number(desde);
+
     Medico.find({})
+
+        // Para que se saltee el numero que le asigne a desde y despues cargue n° desde
+        .skip(desde)
+
+        // Limit limita la respuesta a la cant de registros que quiero mostrar, en este caso serian 5.
+        .limit(5)
+        .populate('usuario', 'nombre apellido email')
+        .populate('hospital')
         .exec(
             (err, medicos) => {
                 if (err) {
@@ -28,10 +39,16 @@ app.get('/', (req, res, next) => {
                         errors: err
                     });
                 }
-                res.status(200).json({
-                    ok: true,
-                    medicos: medicos
-                });
+
+                //Cont sirve para saber la cantidad de registros que hay en el esquema
+                Medico.count({}, (err, conteo) => {
+
+                    res.status(200).json({
+                        ok: true,
+                        medicos: medicos,
+                        total: conteo
+                    });
+                }); 
             });
 });
 
@@ -70,6 +87,7 @@ app.put('/:id', mdAutenticacion.verificaToken, (req, res) => {
         }
 
         medico.nombre = body.nombre;
+        medico.apellido = body.apellido;
         medico.usuario = req.usuario._id;
         medico.hospial = body.hospital;
 
@@ -104,8 +122,9 @@ app.post('/', mdAutenticacion.verificaToken, (req, res) => {
     // Creo el obj de tipo usuario del modelo del esquema de mongoose
     var medico = new Medico({
         nombre: body.nombre,
+        apellido: body.apellido,
         usuario: req.usuario._id,
-        hospial: body.hospital
+        hospital: body.hospital
     });
 
     medico.save((err, medicoGuardado) => {

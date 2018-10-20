@@ -18,7 +18,20 @@ var Hospital = require('../models/hospital');
 // ======================================
 app.get('/', (req, res, next) => {
 
+    var desde = req.query.desde || 0;
+    desde = Number(desde);
+
     Hospital.find({})
+
+        // Para que se saltee el numero que le asigne a desde y despues cargue n° desde
+        .skip(desde)
+
+        // Limit limita la respuesta a la cant de registros que quiero mostrar, en este caso serian 5.
+        .limit(5)
+
+
+        // Populate sirve para especificar que tablas o que campos quiero de la otra coleccion
+        .populate('usuario', 'nombre apellido email')
         .exec(
             (err, hospitales) => {
                 if (err) {
@@ -28,9 +41,14 @@ app.get('/', (req, res, next) => {
                         errors: err
                     });
                 }
-                res.status(200).json({
-                    ok: true,
-                    hospitales: hospitales
+
+                //Cont sirve para saber la cantidad de registros que hay en el esquema
+                Hospital.count({}, (err, conteo) => {
+                    res.status(200).json({
+                        ok: true,
+                        hospitales: hospitales,
+                        total: conteo
+                    });
                 });
             });
 });

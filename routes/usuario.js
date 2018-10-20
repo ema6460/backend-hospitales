@@ -18,7 +18,17 @@ var Usuario = require('../models/usuario');
 // ======================================
 app.get('/', (req, res, next) => {
 
+    
+    var desde = req.query.desde || 0;
+    desde = Number(desde);
+
     Usuario.find({}, 'nombre apellido email img role')
+
+    // Para que se saltee el numero que le asigne a desde y despues cargue n° desde
+    .skip(desde)
+
+    // Limit limita la respuesta a la cant de registros que quiero mostrar, en este caso serian 5.
+        .limit(5)
         .exec(
             (err, usuarios) => {
                 if (err) {
@@ -28,10 +38,18 @@ app.get('/', (req, res, next) => {
                         errors: err
                     });
                 }
-                res.status(200).json({
-                    ok: true,
-                    usuarios: usuarios
+
+
+                //Cont sirve para saber la cantidad de registros que hay en el esquema
+                Usuario.count({}, (err, conteo) => {
+                    
+                    res.status(200).json({
+                        ok: true,
+                        usuarios: usuarios,
+                        total: conteo
+                    });
                 });
+
             });
 });
 
