@@ -6,49 +6,50 @@ var mdAutenticacion = require('../middelwares/autenticacion');
 var app = express();
 
 
-//Importo el esquema de usuario que se encuentra en el model/medico
-var Medico = require('../models/medico');
+//Importo el esquema de usuario que se encuentra en el model/paciente
+var Paciente = require('../models/paciente');
 
 
 // Rutas
 
 
 // ======================================
-// Obtener todos los medicos
+// Obtener todos los pacientes
 // ======================================
 app.get('/', (req, res, next) => {
 
     var desde = req.query.desde || 0;
     desde = Number(desde);
 
-    Medico.find({})
+    Paciente.find({})
 
         // Para que se saltee el numero que le asigne a desde y despues cargue n° desde
         .skip(desde)
 
         // Limit limita la respuesta a la cant de registros que quiero mostrar, en este caso serian 5.
         .limit(5)
-        .populate('usuario', 'nombre apellido email')
+        .populate('usuario', 'nombre apellido email role')
         .populate('hospital')
+        .populate('medico')
         .exec(
-            (err, medicos) => {
+            (err, pacientes) => {
                 if (err) {
                     return res.status(500).json({
                         ok: false,
-                        mensaje: 'Error al cargar medicos',
+                        mensaje: 'Error al cargar paciente',
                         errors: err
                     });
                 }
 
                 //Cont sirve para saber la cantidad de registros que hay en el esquema
-                Medico.count({}, (err, conteo) => {
+                Paciente.count({}, (err, conteo) => {
 
                     res.status(200).json({
                         ok: true,
-                        medicos: medicos,
+                        pacientes: pacientes,
                         total: conteo
                     });
-                }); 
+                });
             });
 });
 
@@ -58,52 +59,54 @@ app.get('/', (req, res, next) => {
 
 
 // ======================================
-// Actualizar Medico
+// Actualizar
 // ======================================
 app.put('/:id', mdAutenticacion.verificaToken, (req, res) => {
 
     var id = req.params.id;
     var body = req.body;
 
-    Medico.findById(id, (err, medico) => {
+    Paciente.findById(id, (err, paciente) => {
 
 
         if (err) {
             return res.status(500).json({
                 ok: false,
-                mensaje: 'Error al buscar medico',
+                mensaje: 'Error al buscar paciente',
                 errors: err
             });
         }
 
-        if (!medico) {
+        if (!paciente) {
             return res.status(400).json({
                 ok: false,
-                mensaje: 'El medico con el id' + id + 'no existe',
+                mensaje: 'El paciente con el id' + id + 'no existe',
                 errors: {
-                    message: 'No existe el medico con ese ID'
+                    message: 'No existe el paciente con ese ID'
                 }
             });
         }
 
-        medico.nombre = body.nombre;
-        medico.apellido = body.apellido;
-        medico.usuario = req.usuario._id;
-        medico.hospial = body.hospital;
+       paciente.nombre = body.nombre;
+       paciente.apellido = body.apellido;
+       paciente.usuario = req.usuario._id;
+       paciente.dni = req.dni;
+       paciente.hospial = body.hospital;
+       
 
-        medico.save((err, medicoGuardado) => {
+        paciente.save((err, pacienteGuardado) => {
 
             if (err) {
                 return res.status(400).json({
                     ok: false,
-                    mensaje: 'Error al actualizar medico',
+                    mensaje: 'Error al actualizar paciente',
                     errors: err
                 });
             }
 
             res.status(200).json({
                 ok: true,
-                medico: medicoGuardado
+                paciente: pacienteGuardado
             });
         });
     });
@@ -113,33 +116,34 @@ app.put('/:id', mdAutenticacion.verificaToken, (req, res) => {
 
 
 // ======================================
-// Crear medico
+// Crear Paciente
 // ======================================
 app.post('/', mdAutenticacion.verificaToken, (req, res) => {
 
     var body = req.body;
 
-    // Creo el obj de tipo usuario del modelo del esquema de mongoose
-    var medico = new Medico({
+    // Creo el obj de tipo paciente del modelo del esquema de mongoose
+    var paciente = new Paciente({
         nombre: body.nombre,
         apellido: body.apellido,
         dni: body.dni,
-        usuario: req.usuario._id,
-        hospital: body.hospital
+        hospital: body.hospital,
+        medico: body.medico,
+        usuario: req.usuario._id
     });
 
-    medico.save((err, medicoGuardado) => {
+    paciente.save((err, pacienteGuardado) => {
         if (err) {
             return res.status(400).json({
                 ok: false,
-                mensaje: 'Error al crear medico',
+                mensaje: 'Error al crear paciente',
                 errors: err
             });
         }
         res.status(201).json({
             ok: true,
-            medico: medicoGuardado,
-            medicotoken: req.medico
+            paciente: pacienteGuardado,
+           pacientetoken: req.paciente
         });
     });
 });

@@ -9,6 +9,8 @@ var appRoutes = require('./routes/app');
 var usuarioRoutes = require('./routes/usuario');
 var medicoRoutes = require('./routes/medico');
 var hospitalRoutes = require('./routes/hospital');
+var pacienteRoutes = require('./routes/paciente');
+var uploadRoutes = require('./routes/upload');
 var loginRoutes = require('./routes/login');
 
 
@@ -20,7 +22,7 @@ var app = express();
 // Body Parser
 // parse application/x-www-form-urlencoded
 app.use(bodyParser.urlencoded({
-    extended: false
+    extended: true
 }));
 app.use(bodyParser.json());
 
@@ -42,7 +44,9 @@ mongoose.connection.openUri('mongodb://localhost:27017/hospitalDB', {
 app.use('/login', loginRoutes);
 app.use('/usuario', usuarioRoutes);
 app.use('/hospital', hospitalRoutes);
+app.use('/upload', uploadRoutes);
 app.use('/medico', medicoRoutes);
+app.use('/paciente', pacienteRoutes);
 app.use('/', appRoutes);
 
 
