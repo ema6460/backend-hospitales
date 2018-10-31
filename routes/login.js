@@ -24,6 +24,7 @@ async function verify(token) {
         audience: CLIENT_ID, // Specify the CLIENT_ID of the app that accesses the backend
         // Or, if multiple clients access the backend:
         //[CLIENT_ID_1, CLIENT_ID_2, CLIENT_ID_3]
+        
     });
     const payload = ticket.getPayload();
     // const userid = payload['sub'];
@@ -45,18 +46,84 @@ app.post('/google', async (req, res) => {
     var token = req.body.token;
 
     var googleUser = await verify(token)
-        .catch( e => {
+        .catch(e => {
             return res.status(403).json({
                 ok: false,
                 mensaje: 'Token no valido'
             });
         });
 
-    res.status(200).json({
-        ok: true,
-        mensaje: 'OKK!!!!',
-        googleUser: googleUser
+
+
+    Usuario.findOne({
+        email: googleUser.email
+    }, (err, usuarioDB) => {
+
+        if (err) {
+            return res.status(500).json({
+                ok: false,
+                mensaje: 'Error al buscar usuario',
+                errors: err
+            });
+        }
+
+        if (usuarioDB) {
+
+            if (usuarioDB.google === google) {
+
+                return res.status(400).json({
+                    ok: false,
+                    mensaje: 'Debe de usar su autenticación normal'
+                });
+            } else {
+                var token = jwt.sign({
+                    usuario: usuarioDB
+                }, SEED, {
+                    expiresIn: 14400
+                });
+
+                res.status(200).json({
+                    ok: true,
+                    usuario: usuarioDB,
+                    token: token,
+                    id: usuarioDB.id
+                });
+            }
+        } else {
+
+            // El usuario no existe... hay que crearlo
+            var usuario = new Usuario();
+            usuario.nombre = user.nombre;
+            usuario.email = user.email;
+            usuario.img = user.img;
+            usuario.google = true;
+            usuario.password = '';  
+
+            usuario.save((err, usuarioDB) => {
+                var token = jwt.sign({
+                    usuario: usuarioDB
+                }, SEED, {
+                    expiresIn: 14400
+                });
+
+                res.status(200).json({
+                    ok: true,
+                    usuario: usuarioDB,
+                    token: token,
+                    id: usuarioDB.id
+                });
+            });
+        }               
+
     });
+
+
+
+    // res.status(200).json({
+    //     ok: true,
+    //     mensaje: 'OKK!!!!',
+    //     googleUser: googleUser
+    // });
 
 });
 
