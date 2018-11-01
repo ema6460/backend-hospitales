@@ -1,200 +1,148 @@
 var express = require('express');
 var bcrypt = require('bcryptjs');
-var jwt = require('jsonwebtoken');
-var SEED = require('../config/config').SEED;
-var app = express();
-
-
-
-//Importo el esquema de usuario que se encuentra en el model/usuario
 var Usuario = require('../models/usuario');
-
-
-var CLIENT_ID = require('../config/config').CLIENT_ID;
-const {
-    OAuth2Client
-} = require('google-auth-library');
-const client = new OAuth2Client(CLIENT_ID);
-// ==============================
-// Autenticacón de google
-// ===============================
+var jwt = require('jsonwebtoken');
+ 
+var SEED = require('../config/config').SEED;
+var GOOGLE_CLIENT_ID = require('../config/config').GOOGLE_CLIENT_ID;
+ 
+var { OAuth2Client } = require('google-auth-library');
+var client = new OAuth2Client(GOOGLE_CLIENT_ID);
+ 
+// Inicializar variables
+var app = express();
+ 
 async function verify(token) {
-    const ticket = await client.verifyIdToken({
-        idToken: token,
-        audience: CLIENT_ID, // Specify the CLIENT_ID of the app that accesses the backend
-        // Or, if multiple clients access the backend:
-        //[CLIENT_ID_1, CLIENT_ID_2, CLIENT_ID_3]
-        
-    });
-    const payload = ticket.getPayload();
-    // const userid = payload['sub'];
-    // If request specified a G Suite domain:
-    //const domain = payload['hd'];
-
-    return {
-        nombre: payload.name,
-        email: payload.email,
-        img: payload.picture,
-        google: true
-    }
+  var ticket = await client.verifyIdToken({
+      idToken: token,
+      audience: GOOGLE_CLIENT_ID
+  });
+ 
+  var payload = ticket.getPayload();
+ 
+  return {
+    nombre: payload.name,
+    email: payload.email,
+    img: payload.picture,
+    google: true
+  }
 }
-verify().catch(console.error);
-
-
+ 
+// Autenticación vía google
 app.post('/google', async (req, res) => {
-
-    var token = req.body.token;
-
-    var googleUser = await verify(token)
-        .catch(e => {
-            return res.status(403).json({
-                ok: false,
-                mensaje: 'Token no valido'
-            });
-        });
-
-
-
-    Usuario.findOne({
-        email: googleUser.email
-    }, (err, usuarioDB) => {
-
-        if (err) {
-            return res.status(500).json({
-                ok: false,
-                mensaje: 'Error al buscar usuario',
-                errors: err
-            });
-        }
-
-        if (usuarioDB) {
-
-            if (usuarioDB.google === google) {
-
-                return res.status(400).json({
-                    ok: false,
-                    mensaje: 'Debe de usar su autenticación normal'
-                });
-            } else {
-                var token = jwt.sign({
-                    usuario: usuarioDB
-                }, SEED, {
-                    expiresIn: 14400
-                });
-
-                res.status(200).json({
-                    ok: true,
-                    usuario: usuarioDB,
-                    token: token,
-                    id: usuarioDB.id
-                });
-            }
-        } else {
-
-            // El usuario no existe... hay que crearlo
-            var usuario = new Usuario();
-            usuario.nombre = user.nombre;
-            usuario.email = user.email;
-            usuario.img = user.img;
-            usuario.google = true;
-            usuario.password = '';  
-
-            usuario.save((err, usuarioDB) => {
-                var token = jwt.sign({
-                    usuario: usuarioDB
-                }, SEED, {
-                    expiresIn: 14400
-                });
-
-                res.status(200).json({
-                    ok: true,
-                    usuario: usuarioDB,
-                    token: token,
-                    id: usuarioDB.id
-                });
-            });
-        }               
-
+  var token = req.body.token;
+ 
+  var googleUser = await verify(token).catch(err => {
+    return res.status(403).json({
+      ok: false,
+      mensaje: 'Token de google inválido',
+      errors: { message: 'Token de google inválido' }
     });
-
-
-
-    // res.status(200).json({
-    //     ok: true,
-    //     mensaje: 'OKK!!!!',
-    //     googleUser: googleUser
-    // });
-
+  });
+ 
+  Usuario.findOne({ email: googleUser.email }, (err, usuario) => {
+    if (err) {
+      return res.status(500).json({
+        ok: false,
+        mensaje: 'El usuario no existe',
+        errors: err
+      });
+    }
+ 
+    if (usuario) {
+      if (!usuario.google) {
+        return res.status(400).json({
+          ok: false,
+          mensaje: 'Debe usar su autenticación con correo y contraseña'
+        });
+      } else {
+        usuario.password = ':)';
+ 
+        // Expira en 4 horas (14400 ms)
+        var token = jwt.sign({ usuario: usuario }, SEED, { expiresIn: 14400});
+ 
+        return res.status(200).json({
+          ok: true,
+          id: usuario.id,
+          usuario: usuario,
+          token: token
+        });
+      }
+    } else {
+      // El usuario no existe, hay que crearlo
+      var nuevoUsuario = new Usuario({
+        nombre: googleUser.nombre,
+        email: googleUser.email,
+        password: ':)',
+        img: googleUser.img,
+        google: true
+      });
+ 
+      nuevoUsuario.save((err, usuarioGuardado) => {
+        if (err) {
+          return res.status(400).json({
+            ok: false,
+            mensaje: 'Error al crear usuario',
+            errors: err
+          });
+        }
+ 
+        // Expira en 4 horas (14400 ms)
+        var token = jwt.sign({ usuario: usuarioGuardado }, SEED, { expiresIn: 14400});
+ 
+        return res.status(200).json({
+          ok: true,
+          id: usuarioGuardado.id,
+          usuario: usuarioGuardado,
+          token: token
+        });
+      });
+    }
+  });
 });
-
-
-
-
-// ==============================
-// Autenticacón normal
-// ===============================
+ 
+// Autenticación normal
 app.post('/', (req, res) => {
-
-    // Para recibir el correo y la contraseña como parte del cuerpo del login    
-    var body = req.body;
-
-
-    // Saber si existe un usuario con el email
-    Usuario.findOne({
-        email: body.email
-    }, (err, usuarioDB) => {
-
-        if (err) {
-            return res.status(500).json({
-                ok: false,
-                mensaje: 'Error al buscar usuario',
-                errors: err
-            });
-        }
-
-        if (!usuarioDB) {
-            res.status(400).json({
-                ok: false,
-                mensaje: 'Credenciales incorrectas - email',
-                body: body
-            });
-        }
-
-
-        // Toma el string que se quiere verificar y lo compara con otro que ya a sido pasado por el hash
-        if (!bcrypt.compareSync(body.password, usuarioDB.password)) {
-            res.status(400).json({
-                ok: false,
-                mensaje: 'Credenciales incorrectas - password',
-                body: body
-            });
-        }
-
-        // CREA TOKEN
-        usuarioDB.password = ':)';
-
-        var token = jwt.sign({
-            usuario: usuarioDB
-        }, SEED, {
-            expiresIn: 14400
-        });
-
-        res.status(200).json({
-            ok: true,
-            usuario: usuarioDB,
-            token: token,
-            id: usuarioDB.id
-        });
+  var body = req.body;
+ 
+ 
+  Usuario.findOne({ email: body.email}, (err, usuario) => {
+    if (err) {
+      return res.status(500).json({
+        ok: false,
+        mensaje: 'El usuario no existe',
+        errors: err
+      });
+    }
+ 
+    if (!usuario) {
+      return res.status(400).json({
+        ok: false,
+        mensaje: 'Credenciales incorrectas - email',
+        errors: { message: 'Credenciales incorrectas - email' }
+      });
+    }
+ 
+    if (!bcrypt.compareSync(body.password, usuario.password)) {
+      return res.status(400).json({
+        ok: false,
+        mensaje: 'Credenciales incorrectas - password',
+        errors: { message: 'Credenciales incorrectas - password' }
+      });
+    }
+ 
+    usuario.password = ':)';
+ 
+    // Expira en 4 horas (14400 ms)
+    var token = jwt.sign({ usuario: usuario }, SEED, { expiresIn: 14400});
+ 
+    return res.status(200).json({
+      ok: true,
+      id: usuario.id,
+      usuario: usuario,
+      token: token
     });
-
-
-
+  });
 });
-
-
-
-
-
-
-
+ 
 module.exports = app;
