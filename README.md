@@ -1,6 +1,5 @@
 # Backend Hospitales NodeJs 
 
-_La finalidad del mismo es realizar un software para poder controlar la gestion de un hospital
 
 ## Comenzando 🚀
 
