@@ -1,22 +1,33 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
-    <meta charset="utf-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>Google Signin Demo</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" type="text/css" media="screen" href="main.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Google SignIn Demo</title>
 
     <script src="https://apis.google.com/js/platform.js" async defer></script>
-    <meta name="google-signin-client_id" content="593006303580-7sjn0hduiets4naa7rhculbqq758jk02.apps.googleusercontent.com">
+
+    <meta name="google-signin-client_id" content="442737206823-dilej5tevnrv61sovd7bocf5qeafmjs3.apps.googleusercontent.com">
 
 
 </head>
 
 <body>
+
     <div class="g-signin2" data-onsuccess="onSignIn"></div>
+
     <a href="#" onclick="signOut();">Sign out</a>
+
+    <script>
+        function signOut() {
+            var auth2 = gapi.auth2.getAuthInstance();
+            auth2.signOut().then(function() {
+                console.log('User signed out.');
+            });
+        }
+    </script>
 
     <script>
         function onSignIn(googleUser) {
@@ -28,19 +39,9 @@
 
             var id_token = googleUser.getAuthResponse().id_token;
             console.log('Token', id_token);
-
         }
     </script>
 
-
-    <script>
-        function signOut() {
-            var auth2 = gapi.auth2.getAuthInstance();
-            auth2.signOut().then(function () {
-                console.log('User signed out.');
-            });
-        }
-    </script>
 </body>
 
 </html>

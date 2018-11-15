@@ -1,6 +1,5 @@
-module.exports.SEED = '@este-@es-un-seed-dificil-D3-LE3R';
+module.exports.SEED = 'este-es-un-seed-dificil';
 
-
-
-// GOOGLE
-module.exports.GOOGLE_CLIENT_ID = '593006303580-7sjn0hduiets4naa7rhculbqq758jk02.apps.googleusercontent.com';
+// Google
+module.exports.GOOGLE_CLIENT_ID = '442737206823-dilej5tevnrv61sovd7bocf5qeafmjs3.apps.googleusercontent.com';
+module.exports.GOOGLE_SECRET = '6cWrrFy8KchLLrYmg70esp7t';
